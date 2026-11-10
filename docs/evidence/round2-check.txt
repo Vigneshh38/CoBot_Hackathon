@@ -1,0 +1,24 @@
+PASS  8 seed teams exist
+PASS  create team
+PASS  duplicate team name rejected
+PASS  edit team (area + current location)
+PASS  new incident is Reported
+PASS  assigning a team sets status Assigned
+PASS  team becomes Busy
+PASS  busy team cannot be deleted
+PASS  stats: assigned=1 busy=1 free=8
+PASS  unassign -> Pending, team Available
+PASS  resolving frees the team
+PASS  free team can be deleted
+PASS  deleted team is cleared from its old incidents
+PASS  queue ranks by priority score
+      top: #2 score 125 = Critical 100 + 30 people 15 + category 10
+PASS  category distribution counts
+PASS  hourly chart: 3 reports in the current hour
+PASS  status chart counts
+PASS  severity chart counts open incidents only
+PASS  average time to assign: 0 min
+PASS  every team has a long tracking token
+PASS  token finds its team; wrong token finds none
+PASS  a vehicle fix is stored and listed for the map
+PASS  replacing the link revokes the old token

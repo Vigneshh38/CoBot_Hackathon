@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sahaya Control Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+:root{
+  --bg:#FAF6F0; --surface:#FFFFFF; --surface-2:#F7F1E7;
+  --sand-100:#F3E8D8; --sand-200:#E8D5BA; --sand-400:#C9A57A; --sand-600:#9A7650; --sand-700:#7A5A38;
+  --ink:#2A241D; --ink-2:#5E554A; --ink-3:#8E8477; --line:#EAE1D3;
+  --crit:#B3261E; --crit-bg:#FBEAE8;
+  --high:#B4581C; --high-bg:#FBEEE3;
+  --med:#8A7214; --med-bg:#F6F0D8;
+  --low:#4F7A5A; --low-bg:#E7F0E9;
+  --shadow-1:0 1px 2px rgba(70,45,20,.06),0 1px 3px rgba(70,45,20,.07);
+  --shadow-2:0 2px 6px rgba(70,45,20,.08),0 8px 24px rgba(70,45,20,.10);
+  --ease:cubic-bezier(.2,0,0,1); --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:16px;height:16px}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:76px 1fr;min-height:100vh}
+.rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;position:sticky;top:0;height:100vh}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--sand-600);color:#fff;display:grid;place-items:center;margin-bottom:14px}
+.rail-item{width:60px;padding:8px 0 6px;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink-2);font-size:11px;font-weight:500;transition:background .2s var(--ease),color .2s var(--ease)}
+.rail-item .pill{width:52px;height:30px;border-radius:15px;display:grid;place-items:center;transition:background .25s var(--ease)}
+.rail-item:hover .pill{background:var(--surface-2)}
+.rail-item.active{color:var(--ink)}
+.rail-item.active .pill{background:var(--sand-100);color:var(--sand-700)}
+.rail .spacer{flex:1}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{height:64px;display:flex;align-items:center;gap:16px;padding:0 28px;border-bottom:1px solid var(--line);background:rgba(250,246,240,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:500}
+.title{font-size:18px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.title small{display:block;font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:0}
+.search{flex:1;max-width:520px;margin-left:24px;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:0 16px;height:42px;color:var(--ink-3);transition:box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.search:focus-within{border-color:var(--sand-400);box-shadow:0 0 0 4px var(--sand-100)}
+.search input{border:0;outline:0;background:none;font:inherit;color:var(--ink);flex:1;min-width:0}
+.live{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-left:auto;white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--low);box-shadow:0 0 0 0 rgba(79,122,90,.5);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(79,122,90,0)}100%{box-shadow:0 0 0 0 rgba(79,122,90,0)}}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);position:relative;transition:background .2s var(--ease)}
+.icon-btn:hover{background:var(--sand-100)}
+.icon-btn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--crit);border:2px solid var(--bg)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--sand-200);color:var(--sand-700);display:grid;place-items:center;font-weight:600;font-size:13px}
+
+.content{padding:24px 28px 40px;display:flex;flex-direction:column;gap:20px}
+
+/* ---------- KPIs ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow-1);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.kpi .k-ic{width:40px;height:40px;border-radius:12px;background:var(--surface-2);color:var(--sand-700);display:grid;place-items:center}
+.kpi .k-label{font-size:12.5px;color:var(--ink-3)}
+.kpi .k-val{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .k-val.alert{color:var(--crit)}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-1)}
+.card-h{display:flex;align-items:center;gap:12px;padding:16px 18px 12px}
+.card-h h2{margin:0;font-size:15px;font-weight:600}
+.card-h .sub{color:var(--ink-3);font-size:12.5px}
+.card-h .grow{flex:1}
+.side{display:flex;flex-direction:column;gap:20px}
+
+.chips{display:flex;gap:8px;padding:0 18px 12px;flex-wrap:wrap}
+.chip{height:32px;padding:0 14px;border-radius:16px;border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;transition:all .2s var(--ease)}
+.chip:hover{background:var(--surface-2)}
+.chip.on{background:var(--sand-100);border-color:var(--sand-200);color:var(--sand-700)}
+.chip .n{font-size:11.5px;background:var(--surface);border-radius:10px;padding:0 7px;line-height:18px}
+
+/* ---------- queue ---------- */
+.q-head,.q-row{display:grid;grid-template-columns:34px minmax(0,1fr) 78px 138px 112px;align-items:center;gap:14px;padding:0 18px}
+.q-head{height:36px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface-2);font-size:11.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.q-list{position:relative}
+.q-row{min-height:76px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--surface);position:relative;transition:background .2s var(--ease)}
+.q-row:last-child{border-bottom:0}
+.q-row:hover{background:#FDFAF5}
+.q-row::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--sev)}
+.q-row.new{animation:arrive .9s var(--ease)}
+@keyframes arrive{from{opacity:0;transform:translateY(-12px);background:var(--sand-100)}to{opacity:1;transform:none}}
+.q-row.flash{animation:flash 1.6s var(--ease)}
+@keyframes flash{0%,40%{background:var(--sand-100)}100%{background:var(--surface)}}
+.rank{font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:center}
+.inc{display:flex;gap:12px;align-items:center;min-width:0}
+.type-ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--sev-bg);color:var(--sev);flex:none}
+.inc-t{min-width:0}
+.inc-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inc-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px;color:var(--ink-3);font-size:12.5px}
+.tag{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:6px;font-size:11.5px;font-weight:500;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.tag.sev{background:var(--sev-bg);color:var(--sev)}
+.tag.ai{background:var(--sand-100);color:var(--sand-700)}
+.tag.warn{background:var(--high-bg);color:var(--high)}
+.tag .ic{width:13px;height:13px}
+.score{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;transition:color .3s}
+.score small{display:block;font-size:11px;font-weight:500;color:var(--ink-3)}
+.dl{font-variant-numeric:tabular-nums}
+.dl-top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3)}
+.dl-time{font-weight:600;font-size:13.5px;color:var(--dl)}
+.bar{height:5px;border-radius:3px;background:var(--surface-2);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--dl);transition:width 1s linear,background .4s}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--st)}
+
+.sev-critical{--sev:var(--crit);--sev-bg:var(--crit-bg)}
+.sev-high{--sev:var(--high);--sev-bg:var(--high-bg)}
+.sev-medium{--sev:var(--med);--sev-bg:var(--med-bg)}
+.sev-low{--sev:var(--low);--sev-bg:var(--low-bg)}
+.dl-ok{--dl:var(--low)} .dl-near{--dl:var(--high)} .dl-late{--dl:var(--crit)} .dl-done{--dl:var(--ink-3)}
+
+.analyzing{background:linear-gradient(90deg,var(--sand-100),#fff,var(--sand-100));background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ---------- map ---------- */
+#map{height:320px;border-radius:0 0 var(--r) var(--r);border-top:1px solid var(--line)}
+.maplibregl-map{font:inherit;background:var(--surface-2)}
+.mk,.mk-team{cursor:pointer}
+.mk{width:18px;height:18px;border-radius:50%;background:var(--sev);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.mk.pulse{animation:mkpulse 1.8s infinite}
+@keyframes mkpulse{0%{box-shadow:0 0 0 0 rgba(179,38,30,.45),0 1px 4px rgba(0,0,0,.25)}70%{box-shadow:0 0 0 12px rgba(179,38,30,0),0 1px 4px rgba(0,0,0,.25)}100%{box-shadow:0 0 0 0 rgba(179,38,30,0),0 1px 4px rgba(0,0,0,.25)}}
+.mk-team{width:14px;height:14px;border-radius:4px;background:var(--sand-600);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.legend{display:flex;gap:14px;padding:0 18px 12px;font-size:12px;color:var(--ink-3);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{width:9px;height:9px;border-radius:50%;background:var(--sev)}
+.legend b.sq{border-radius:3px;background:var(--sand-600)}
+
+/* ---------- teams ---------- */
+.team{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--line)}
+.team .t-ic{width:34px;height:34px;border-radius:10px;background:var(--surface-2);color:var(--sand-700);display:grid;place-items:center}
+.team .t-name{font-weight:500}
+.team .t-sub{font-size:12px;color:var(--ink-3)}
+.team .grow{flex:1;min-width:0}
+.avail{font-size:12px;font-weight:500;padding:3px 9px;border-radius:12px}
+.avail.free{background:var(--low-bg);color:var(--low)}
+.avail.busy{background:var(--surface-2);color:var(--ink-3)}
+
+/* ---------- buttons ---------- */
+.btn{height:36px;padding:0 16px;border-radius:18px;font-weight:500;font-size:13.5px;display:inline-flex;align-items:center;gap:8px;transition:background .2s var(--ease),box-shadow .2s var(--ease),transform .1s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--sand-600);color:#fff}
+.btn.primary:hover{background:var(--sand-700);box-shadow:var(--shadow-1)}
+.btn.tonal{background:var(--sand-100);color:var(--sand-700)}
+.btn.tonal:hover{background:var(--sand-200)}
+.btn.text{color:var(--sand-700);padding:0 10px}
+.btn.text:hover{background:var(--surface-2)}
+.btn.danger{background:var(--crit-bg);color:var(--crit)}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(42,36,29,.28);opacity:0;pointer-events:none;transition:opacity .3s var(--ease);z-index:900}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(460px,100vw);background:var(--surface);z-index:1000;box-shadow:-8px 0 32px rgba(70,45,20,.14);transform:translateX(104%);transition:transform .35s var(--ease);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-h{padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.dr-h h3{margin:4px 0 2px;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.dr-h .sub{color:var(--ink-3);font-size:13px}
+.dr-b{flex:1;overflow:auto;padding:16px 20px 24px;display:flex;flex-direction:column;gap:16px}
+.dr-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
+.sec{border:1px solid var(--line);border-radius:12px;padding:14px}
+.sec h4{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:600;display:flex;align-items:center;gap:6px}
+.photo{height:150px;border-radius:12px;background:repeating-linear-gradient(135deg,var(--surface-2) 0 12px,#F1E8DA 12px 24px);display:grid;place-items:center;color:var(--ink-3);font-size:12.5px;text-align:center}
+.photo .ic{width:28px;height:28px;margin:0 auto 6px;display:block}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:13px}
+.kv dt{color:var(--ink-3)} .kv dd{margin:0;font-weight:500}
+.conf{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-top:4px}
+.conf i{display:block;height:100%;background:var(--sand-600);border-radius:3px}
+.brk{display:flex;flex-direction:column;gap:8px}
+.brk-row{display:grid;grid-template-columns:120px 1fr 36px;align-items:center;gap:10px;font-size:12.5px}
+.brk-row .bar{margin:0;height:7px}
+.brk-row .bar i{background:var(--sand-400);transition:width .6s var(--ease)}
+.brk-row b{text-align:right;font-variant-numeric:tabular-nums}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 12px 22px;font-size:13px}
+.tl li::before{content:"";position:absolute;left:5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--sand-400)}
+.tl li::after{content:"";position:absolute;left:8.5px;top:16px;bottom:0;width:1px;background:var(--line)}
+.tl li:last-child::after{display:none}
+.tl small{color:var(--ink-3);display:block}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--high-bg);color:#7A3D12;font-size:13px}
+.banner .acts{display:flex;gap:6px;margin-top:8px}
+select{font:inherit;height:36px;border-radius:10px;border:1px solid var(--line);padding:0 10px;background:var(--surface);color:var(--ink)}
+
+/* ---------- dialog / toast ---------- */
+.dialog{position:fixed;left:50%;top:50%;width:min(440px,calc(100vw - 32px));background:var(--surface);border-radius:20px;box-shadow:var(--shadow-2);z-index:1100;padding:22px;transform:translate(-50%,-46%) scale(.97);opacity:0;pointer-events:none;transition:all .28s var(--ease)}
+.dialog.on{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
+.dialog h3{margin:0 0 4px;font-size:18px;font-weight:600}
+.dialog p{margin:0 0 14px;color:var(--ink-3);font-size:13px}
+.dialog label{display:block;font-size:12.5px;color:var(--ink-2);margin:10px 0 6px;font-weight:500}
+.dialog textarea{width:100%;min-height:84px;border-radius:12px;border:1px solid var(--line);padding:10px 12px;font:inherit;resize:vertical;outline:0}
+.dialog textarea:focus{border-color:var(--sand-400);box-shadow:0 0 0 4px var(--sand-100)}
+.dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.toasts{position:fixed;left:100px;bottom:24px;display:flex;flex-direction:column;gap:8px;z-index:1200}
+.toast{background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;font-size:13.5px;display:flex;gap:10px;align-items:center;box-shadow:var(--shadow-2);animation:tin .35s var(--ease)}
+.toast.out{animation:tout .3s var(--ease) forwards}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}}
+@keyframes tout{to{opacity:0;transform:translateY(8px)}}
+
+@media (max-width:1180px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}.rail{display:none}.search{display:none}
+  .content{padding:16px}.topbar{padding:0 16px}
+  .q-head{display:none}.q-row{grid-template-columns:28px minmax(0,1fr) 64px;padding:10px 16px}
+  .q-row .dl,.q-row .st-cell{display:none}.toasts{left:16px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- Custom icon set: 24px grid, 1.8 stroke, round caps -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z"/><path d="M8 12.5h2l1.2-2.5 1.8 5 1.2-2.5H16"/></symbol>
+  <symbol id="i-queue" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16.2 14.2c2.7.4 4.8 2.8 4.8 5.8"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M3 10v4h3l7 4V6l-7 4H3z"/><path d="M16.5 9.5a3.5 3.5 0 0 1 0 5M19 7a7 7 0 0 1 0 10"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5L2.8 19.5h18.4L12 3.5z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.6 2.2-4.6.2 1.8 1 2.8 2 3.2C11 9 11 6 12 3z"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 13l1.8-5a2 2 0 0 1 1.9-1.4h8.6A2 2 0 0 1 18.2 8L20 13"/><path d="M4 13h16v4H4z"/><path d="M7 17v2M17 17v2M7.5 15h.01M16.5 15h.01"/></symbol>
+  <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l-1.5-3H6M15 9l1-3h2.5"/></symbol>
+  <symbol id="i-flood" viewBox="0 0 24 24"><path d="M3 8c2 0 2-1.5 4.5-1.5S9.5 8 12 8s2.5-1.5 4.5-1.5S19 8 21 8M3 13c2 0 2-1.5 4.5-1.5S9.5 13 12 13s2.5-1.5 4.5-1.5S19 13 21 13M3 18c2 0 2-1.5 4.5-1.5S9.5 18 12 18s2.5-1.5 4.5-1.5S19 18 21 18"/></symbol>
+  <symbol id="i-medical" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21v-5M12 3l6 8h-3l4 5H5l4-5H6l6-8z"/></symbol>
+  <symbol id="i-gas" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M9.5 14.5A2.5 2.5 0 0 0 12 17"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4.5 4.5 0 0 0-5.9 5.9L4 17v3h3l4.8-4.8a4.5 4.5 0 0 0 5.9-5.9l-2.7 2.7-2.4-.6-.6-2.4 2.7-2.7z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><path d="M6 4v4a6 6 0 0 0 6 6h6M6 20v-5"/><path d="M15 11l3 3-3 3"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24"><path d="M11 3.5l1.7 4.8 4.8 1.7-4.8 1.7L11 16.5l-1.7-4.8L4.5 10l4.8-1.7L11 3.5z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h3.5l2 5-2.4 1.5a11 11 0 0 0 5.4 5.4L15 13.5l5 2V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.5"/><circle cx="16" cy="9" r="2.5"/><path d="M3.5 18c.5-2.5 2.3-4 4.5-4s4 1.5 4.5 4M11.5 18c.5-2.5 2.3-4 4.5-4s4 1.5 4.5 4"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2 1.5M9.5 3h5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <div class="logo"><svg class="ic"><use href="#i-logo"/></svg></div>
+    <button class="rail-item active"><span class="pill"><svg class="ic"><use href="#i-queue"/></svg></span>Queue</button>
+    <button class="rail-item"><span class="pill"><svg class="ic"><use href="#i-map"/></svg></span>Map</button>
+    <button class="rail-item"><span class="pill"><svg class="ic"><use href="#i-team"/></svg></span>Teams</button>
+    <button class="rail-item" data-open-alert><span class="pill"><svg class="ic"><use href="#i-alert"/></svg></span>Alerts</button>
+    <button class="rail-item"><span class="pill"><svg class="ic"><use href="#i-chart"/></svg></span>Reports</button>
+    <div class="spacer"></div>
+    <button class="rail-item"><span class="pill"><svg class="ic"><use href="#i-settings"/></svg></span>Settings</button>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="title">Control Center<small>Chennai region</small></div>
+      <label class="search"><svg class="ic"><use href="#i-search"/></svg><input id="search" placeholder="Search incidents, places, teams"></label>
+      <div class="live"><i></i>Live · <span id="clock"></span></div>
+      <button class="icon-btn" aria-label="Notifications"><svg class="ic"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <div class="avatar" title="Admin">AD</div>
+    </header>
+
+    <main class="content">
+      <section class="kpis">
+        <div class="kpi"><div class="k-ic"><svg class="ic"><use href="#i-warn"/></svg></div><div><div class="k-label">Open incidents</div><div class="k-val" id="k-open">0</div></div></div>
+        <div class="kpi"><div class="k-ic"><svg class="ic"><use href="#i-timer"/></svg></div><div><div class="k-label">Awaiting assignment</div><div class="k-val" id="k-wait">0</div></div></div>
+        <div class="kpi"><div class="k-ic"><svg class="ic"><use href="#i-clock"/></svg></div><div><div class="k-label">Deadlines missed</div><div class="k-val" id="k-late">0</div></div></div>
+        <div class="kpi"><div class="k-ic"><svg class="ic"><use href="#i-team"/></svg></div><div><div class="k-label">Teams available</div><div class="k-val" id="k-teams">0</div></div></div>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <div class="card-h">
+            <h2>Priority queue</h2><span class="sub">Highest score first · updates live</span>
+            <span class="grow"></span>
+            <button class="btn tonal" data-open-alert><svg class="ic sm"><use href="#i-alert"/></svg>Area alert</button>
+          </div>
+          <div class="chips" id="chips"></div>
+          <div class="q-head"><span>#</span><span>Incident</span><span>Score</span><span>Deadline</span><span>Status</span></div>
+          <div class="q-list" id="queue"></div>
+        </section>
+
+        <aside class="side">
+          <section class="card">
+            <div class="card-h"><h2>Live map</h2><span class="grow"></span><span class="sub" id="map-count"></span></div>
+            <div class="legend">
+              <span class="sev-critical"><b></b>Critical</span><span class="sev-high"><b></b>High</span>
+              <span class="sev-medium"><b></b>Medium</span><span class="sev-low"><b></b>Low</span><span><b class="sq"></b>Team</span>
+            </div>
+            <div id="map"></div>
+          </section>
+          <section class="card">
+            <div class="card-h"><h2>Response teams</h2><span class="grow"></span><span class="sub" id="team-sub"></span></div>
+            <div id="teams"></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Incident details"></aside>
+
+<div class="dialog" id="alertDlg" role="dialog" aria-modal="true">
+  <h3>Send area alert</h3>
+  <p>Shown as a banner to everyone who opens the app in this area, and sent by SMS to recent reporters there.</p>
+  <label for="alertArea">Area</label>
+  <select id="alertArea" style="width:100%"><option>T. Nagar (2 km radius)</option><option>Velachery (3 km radius)</option><option>Adyar riverbank (1.5 km radius)</option></select>
+  <label for="alertMsg">Message</label>
+  <textarea id="alertMsg">Heavy waterlogging reported. Avoid Usman Road and move vehicles to higher ground.</textarea>
+  <div class="row"><button class="btn text" id="alertCancel">Cancel</button><button class="btn primary" id="alertSend"><svg class="ic sm"><use href="#i-alert"/></svg>Send alert</button></div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+/* ===== Sample data (prototype only) ===== */
+const SEV = {
+  critical:{label:'Critical', base:100, respond:5,  resolve:60},
+  high:    {label:'High',     base:70,  respond:15, resolve:120},
+  medium:  {label:'Medium',   base:40,  respond:30, resolve:240},
+  low:     {label:'Low',      base:10,  respond:60, resolve:480},
+};
+const LEVELS = ['low','medium','high','critical'];
+const STATUS = {
+  reported:{label:'Reported', c:'var(--high)'}, verified:{label:'Verified', c:'var(--sand-600)'},
+  assigned:{label:'Assigned', c:'var(--med)'}, progress:{label:'In progress', c:'var(--sand-700)'},
+  resolved:{label:'Resolved', c:'var(--low)'},
+};
+const MIN = 60000, now0 = Date.now();
+const ago = m => now0 - m*MIN;
+
+const teams = [
+  {id:'A-07', name:'Ambulance A-07', kind:'Medical', lat:13.010, lng:80.220, busy:false},
+  {id:'F-02', name:'Fire Unit F-02', kind:'Fire & rescue', lat:13.050, lng:80.130, busy:false},
+  {id:'TP-11',name:'Traffic Police TP-11', kind:'Traffic', lat:13.035, lng:80.240, busy:true},
+  {id:'R-03', name:'Rescue Team R-03', kind:'Disaster rescue', lat:13.060, lng:80.250, busy:true},
+  {id:'A-12', name:'Ambulance A-12', kind:'Medical', lat:12.960, lng:80.240, busy:false},
+];
+
+let incidents = [
+  {id:101, type:'fire', title:'Vehicle fire on highway', cause:'Car on fire after collision, thick smoke', place:'NH 48, Poonamallee bypass', lat:13.046, lng:80.115, sev:'critical', reports:4, injury:true, at:ago(3), status:'reported', reporter:{name:'Karthik R', phone:'98401 22310', verified:true}, ai:{status:'done', label:'Vehicle fire', conf:91, reason:'Flames and black smoke around a car on a highway lane.', filled:false}},
+  {id:102, type:'car', title:'Multi-vehicle collision', cause:'3 cars crashed at signal, one driver injured', place:'GST Road, Guindy', lat:13.007, lng:80.213, sev:'high', reports:6, injury:true, at:ago(9), status:'verified', reporter:{name:'Priya S', phone:'90030 55821', verified:true}, ai:{status:'done', label:'Road accident', conf:88, reason:'Three damaged cars; a person sitting on the road edge.', filled:false}},
+  {id:103, type:'flood', title:'Severe waterlogging', cause:'Knee-deep water, two-wheelers stranded', place:'Usman Road, T. Nagar', lat:13.041, lng:80.234, sev:'medium', reports:11, injury:false, at:ago(22), status:'assigned', team:'R-03', reporter:{name:'Mohammed I', phone:'99620 71145', verified:true}, ai:{status:'done', label:'Flooding', conf:84, reason:'Water above wheel height across the whole road.', filled:true}},
+  {id:104, type:'medical', title:'Person unconscious', cause:'', place:'Adyar bus depot', lat:13.006, lng:80.257, sev:'high', reports:1, injury:true, at:ago(6), status:'reported', sos:true, reporter:{name:'Anitha V', phone:'97910 33402', verified:false}, ai:{status:'done', label:'Medical emergency', conf:76, reason:'A person lying on the pavement, not moving; people gathered.', filled:true}},
+  {id:105, type:'tree', title:'Fallen tree blocking road', cause:'Tree fell after rain, one lane blocked', place:'2nd Avenue, Anna Nagar', lat:13.085, lng:80.210, sev:'low', reports:2, injury:false, at:ago(35), status:'reported', reporter:{name:'Suresh K', phone:'94440 12876', verified:true}, ai:{status:'done', label:'Road obstruction', conf:93, reason:'Large tree trunk across one lane, no vehicles trapped.', filled:false}},
+  {id:106, type:'bike', title:'Two-wheeler skid', cause:'Bike skidded on wet road, rider hurt leg', place:'OMR, Thoraipakkam', lat:12.940, lng:80.235, sev:'medium', reports:1, injury:true, at:ago(34), status:'reported', reporter:{name:'Deepak M', phone:'98845 60219', verified:true}, ai:{status:'done', label:'Road accident', conf:81, reason:'Motorbike on its side; rider holding leg.', filled:false}},
+  {id:107, type:'wrench', title:'Breakdown on flyover', cause:'Lorry broke down on the left lane', place:'Kathipara flyover', lat:13.008, lng:80.205, sev:'medium', reports:3, injury:false, at:ago(18), status:'progress', team:'TP-11', reporter:{name:'Lakshmi N', phone:'90940 81123', verified:true}, ai:{status:'done', label:'Vehicle breakdown', conf:86, reason:'Stationary lorry with hazard triangle on a flyover.', filled:false}},
+  {id:108, type:'gas', title:'Gas leak smell', cause:'Strong gas smell near apartment block', place:'Velachery Main Road', lat:12.979, lng:80.220, sev:'high', reports:2, injury:false, at:ago(4), status:'reported', reporter:{name:'Ravi P', phone:'98410 77650', verified:true}, ai:{status:'none'}},
+  {id:109, type:'car', title:'Car crash at signal', cause:'Accident near Guindy signal', place:'GST Road, Guindy (180 m away)', lat:13.0085, lng:80.2145, sev:'high', reports:1, injury:false, at:ago(5), status:'reported', dupOf:102, reporter:{name:'Vinoth B', phone:'91762 40981', verified:true}, ai:{status:'done', label:'Road accident', conf:83, reason:'Same scene as #102 from another angle.', filled:true}},
+];
+
+/* ===== Scoring + deadlines (mirrors CLAUDE.md) ===== */
+const effSev = i => i.escalated ? LEVELS[Math.min(3, LEVELS.indexOf(i.sev)+1)] : i.sev;
+const unassigned = i => i.status==='reported' || i.status==='verified';
+function parts(i, t){
+  const s = SEV[effSev(i)];
+  const elapsed = ((i.assignedAt ?? t) - i.at) / MIN;
+  return {
+    severity: s.base,
+    reports: Math.round(Math.min(20, 8*Math.log2(i.reports))),
+    injury: i.injury ? 15 : 0,
+    waiting: Math.round(Math.min(30, 30*elapsed/SEV[i.sev].respond)),
+  };
+}
+const score = (i,t) => Object.values(parts(i,t)).reduce((a,b)=>a+b,0);
+function deadline(i, t){
+  if (i.status==='resolved') return {label:'Done', rem:0, frac:1, cls:'dl-done'};
+  const s = SEV[i.sev], respond = unassigned(i);
+  const win = (respond ? s.respond : s.resolve) * MIN;
+  const rem = i.at + win - t;
+  const frac = Math.max(0, Math.min(1, rem/win));
+  return {label: respond ? 'Assign' : 'Resolve', rem, frac, cls: rem<0 ? 'dl-late' : frac<.25 ? 'dl-near' : 'dl-ok'};
+}
+const fmt = ms => { const neg = ms<0, s = Math.floor(Math.abs(ms)/1000); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  const body = h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}:${String(x).padStart(2,'0')}`; return neg ? `−${body}` : body; };
+const mins = t => { const m = Math.round((Date.now()-t)/MIN); return m<1 ? 'just now' : m<60 ? `${m} min ago` : `${Math.floor(m/60)} h ago`; };
+const mask = p => p.slice(0,2) + '••• •••' + p.slice(-2);
+const ICON = {fire:'i-fire', car:'i-car', bike:'i-bike', flood:'i-flood', medical:'i-medical', tree:'i-tree', gas:'i-gas', wrench:'i-wrench'};
+const ic = (id, cls='ic') => `<svg class="${cls}"><use href="#${id}"/></svg>`;
+
+/* ===== Filters ===== */
+const FILTERS = [
+  {id:'all', label:'All', f:()=>true},
+  {id:'un', label:'Unassigned', f:unassigned},
+  {id:'crit', label:'Critical', f:i=>effSev(i)==='critical'},
+  {id:'dup', label:'Possible duplicates', f:i=>!!i.dupOf},
+  {id:'done', label:'Resolved', f:i=>i.status==='resolved'},
+];
+let filter = 'all', query = '';
+function renderChips(){
+  const open = incidents.filter(i=>filter==='done' || i.status!=='resolved');
+  document.getElementById('chips').innerHTML = FILTERS.map(F=>{
+    const n = incidents.filter(i => F.id==='done' ? F.f(i) : i.status!=='resolved' && F.f(i)).length;
+    return `<button class="chip ${F.id===filter?'on':''}" data-f="${F.id}">${F.id===filter?ic('i-check','ic sm'):''}${F.label}<span class="n">${n}</span></button>`;
+  }).join('');
+}
+document.getElementById('chips').addEventListener('click', e=>{
+  const b = e.target.closest('[data-f]'); if(!b) return; filter = b.dataset.f; renderChips(); renderQueue(true);
+});
+document.getElementById('search').addEventListener('input', e=>{ query = e.target.value.toLowerCase(); renderQueue(true); });
+
+/* ===== Queue with FLIP reordering ===== */
+const rows = new Map();
+function rowHTML(i, rank, t){
+  const p = score(i,t), d = deadline(i,t), sv = effSev(i), st = STATUS[i.status];
+  const tags = [
+    `<span class="tag sev">${SEV[sv].label}</span>`,
+    i.escalated ? `<span class="tag warn">${ic('i-warn')}Escalated</span>` : '',
+    i.sos ? `<span class="tag warn">SOS</span>` : '',
+    i.ai.status==='analyzing' ? `<span class="tag ai analyzing">${ic('i-ai')}AI analyzing…</span>` :
+      i.ai.status==='done' ? `<span class="tag ai">${ic('i-ai')}AI ${i.ai.conf}%</span>` : '',
+    i.dupOf ? `<span class="tag warn">${ic('i-merge')}Dup of #${i.dupOf}?</span>` : '',
+    i.reports>1 ? `<span class="tag">${ic('i-people')}${i.reports}</span>` : '',
+  ].join('');
+  return `<span class="rank">${rank}</span>
+    <div class="inc"><div class="type-ic">${ic(ICON[i.type])}</div>
+      <div class="inc-t"><div class="inc-title">#${i.id} · ${i.title}</div>
+      <div class="inc-meta">${ic('i-pin','ic sm')}${i.place} · ${mins(i.at)}</div>
+      <div class="inc-meta">${tags}</div></div></div>
+    <div class="score">${p}<small>score</small></div>
+    <div class="dl ${d.cls}"><div class="dl-top"><span>${d.label}</span><span class="dl-time">${d.label==='Done'?'—':fmt(d.rem)}</span></div><div class="bar"><i style="width:${d.frac*100}%"></i></div></div>
+    <div class="st-cell"><span class="status" style="--st:${st.c}"><i></i>${st.label}${i.team?` · ${i.team}`:''}</span></div>`;
+}
+function visible(){
+  const F = FILTERS.find(x=>x.id===filter);
+  const t = Date.now();
+  return incidents
+    .filter(i => (filter==='done' ? true : i.status!=='resolved') && F.f(i))
+    .filter(i => !query || (i.title+i.place+i.cause+(i.team||'')).toLowerCase().includes(query))
+    .sort((a,b)=> score(b,t)-score(a,t) || deadline(a,t).rem-deadline(b,t).rem);
+}
+function renderQueue(instant){
+  const list = document.getElementById('queue'), t = Date.now();
+  const first = new Map([...rows].map(([id,el])=>[id, el.getBoundingClientRect().top]));
+  const items = visible();
+  const keep = new Set(items.map(i=>i.id));
+  for (const [id,el] of rows) if(!keep.has(id)){ el.remove(); rows.delete(id); }
+  items.forEach((i,idx)=>{
+    let el = rows.get(i.id), fresh = false;
+    if(!el){ el = document.createElement('div'); el.className='q-row'; el.dataset.id=i.id; rows.set(i.id,el); fresh = true; }
+    el.className = `q-row sev-${effSev(i)}${fresh && i.isNew ? ' new':''}`;
+    el.innerHTML = rowHTML(i, idx+1, t);
+    list.appendChild(el);
+  });
+  if(!items.length) list.innerHTML = '<div style="padding:28px;text-align:center;color:var(--ink-3)">No incidents match this view.</div>', rows.clear();
+  if(instant) return;
+  for (const [id,el] of rows){
+    const old = first.get(id); if(old==null) continue;
+    const dy = old - el.getBoundingClientRect().top;
+    if(Math.abs(dy)>1) el.animate([{transform:`translateY(${dy}px)`},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,0,0,1)'});
+  }
+}
+document.getElementById('queue').addEventListener('click', e=>{ const r = e.target.closest('.q-row'); if(r) openDrawer(+r.dataset.id); });
+
+/* Per-second tick: countdowns only (cheap) */
+function tickDeadlines(){
+  const t = Date.now();
+  for (const [id,el] of rows){
+    const i = incidents.find(x=>x.id===id); if(!i) continue;
+    const d = deadline(i,t), box = el.querySelector('.dl'); if(!box) continue;
+    box.className = `dl ${d.cls}`;
+    box.querySelector('.dl-time').textContent = d.label==='Done' ? '—' : fmt(d.rem);
+    box.querySelector('.bar i').style.width = (d.frac*100)+'%';
+  }
+}
+
+/* Escalation: respond-by missed and still unassigned -> one level up (once) */
+function checkEscalations(){
+  const t = Date.now();
+  incidents.forEach(i=>{
+    if(!i.escalated && unassigned(i) && t > i.at + SEV[i.sev].respond*MIN && i.sev!=='critical'){
+      i.escalated = true; toast(ic('i-warn')+`#${i.id} escalated to ${SEV[effSev(i)].label}: assign deadline missed`);
+      markerFor(i);
+    }
+  });
+}
+
+/* ===== KPIs + teams ===== */
+function renderKpis(){
+  const t = Date.now(), open = incidents.filter(i=>i.status!=='resolved');
+  document.getElementById('k-open').textContent = open.length;
+  document.getElementById('k-wait').textContent = open.filter(unassigned).length;
+  const late = open.filter(i=>deadline(i,t).rem<0).length, el = document.getElementById('k-late');
+  el.textContent = late; el.classList.toggle('alert', late>0);
+  document.getElementById('k-teams').textContent = `${teams.filter(x=>!x.busy).length}/${teams.length}`;
+}
+function renderTeams(){
+  document.getElementById('team-sub').textContent = `${teams.filter(x=>!x.busy).length} available`;
+  document.getElementById('teams').innerHTML = teams.map(x=>{
+    const job = incidents.find(i=>i.team===x.id && i.status!=='resolved');
+    return `<div class="team"><div class="t-ic">${ic(x.kind==='Medical'?'i-medical':x.kind==='Traffic'?'i-car':x.kind==='Fire & rescue'?'i-fire':'i-team')}</div>
+      <div class="grow"><div class="t-name">${x.name}</div><div class="t-sub">${x.kind}${job?` · on #${job.id}`:''}</div></div>
+      <span class="avail ${x.busy?'busy':'free'}">${x.busy?'Busy':'Available'}</span></div>`;
+  }).join('');
+}
+
+/* ===== Map: CARTO Voyager (needs a free key) → falls back to OpenFreeMap (no key) =====
+   Get a key at https://carto.com/basemaps/apikey and paste it below.
+   In the real app this comes from .env (CARTO_BASEMAPS_KEY). It is visible in the browser anyway, so it's not a secret. */
+const CARTO_KEY = '';
+const MAP_STYLE = CARTO_KEY
+  ? `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json?key=${encodeURIComponent(CARTO_KEY)}`
+  : 'https://tiles.openfreemap.org/styles/liberty';
+const map = new maplibregl.Map({container:'map', style:MAP_STYLE,
+  center:[80.2,13.03], zoom:10.2, attributionControl:{compact:true}});
+map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
+map.on('load', ()=>{
+  const b = new maplibregl.LngLatBounds();
+  [...incidents, ...teams].forEach(p=>b.extend([p.lng,p.lat]));
+  map.fitBounds(b, {padding:28, duration:0});
+});
+const markers = new Map();
+function markerFor(i){
+  const old = markers.get(i.id); if(old) old.remove();
+  if(i.status==='resolved'){ markers.delete(i.id); return; }
+  const sv = effSev(i), el = document.createElement('div');
+  el.className = `mk sev-${sv} ${sv==='critical'&&unassigned(i)?'pulse':''}`;
+  el.title = `#${i.id} · ${i.title}`;
+  el.addEventListener('click', ()=>openDrawer(i.id));
+  markers.set(i.id, new maplibregl.Marker({element:el}).setLngLat([i.lng,i.lat]).addTo(map));
+}
+teams.forEach(x=>{ const el = document.createElement('div'); el.className='mk-team'; el.title=x.name;
+  new maplibregl.Marker({element:el}).setLngLat([x.lng,x.lat]).addTo(map); });
+function renderMapCount(){ document.getElementById('map-count').textContent = `${markers.size} open on map`; }
+
+/* ===== Drawer ===== */
+const dist = (a,b) => { const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+  const h=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
+let openId = null;
+function openDrawer(id){
+  openId = id; const i = incidents.find(x=>x.id===id); if(!i) return;
+  const t = Date.now(), p = parts(i,t), total = score(i,t), d = deadline(i,t);
+  const free = teams.filter(x=>!x.busy).map(x=>({...x, km:dist(x,i)})).sort((a,b)=>a.km-b.km);
+  const max = {severity:100, reports:20, injury:15, waiting:30};
+  const names = {severity:`Severity (${SEV[effSev(i)].label})`, reports:`Reports (${i.reports})`, injury:'Injury', waiting:'Waiting time'};
+  const timeline = [
+    [`Reported${i.sos?' via SOS':''} by ${i.reporter.name}`, i.at],
+    ...(i.ai.status==='done' ? [[`AI labelled “${i.ai.label}” (${i.ai.conf}%)`, i.at+40000]] : []),
+    ...(i.reports>1 ? [[`${i.reports-1} more report${i.reports>2?'s':''} merged`, i.at+120000]] : []),
+    ...(i.status!=='reported' ? [['Verified by admin', i.at+150000]] : []),
+    ...(i.team ? [[`Assigned to ${i.team}`, i.assignedAt || i.at+200000]] : []),
+    ...(i.status==='resolved' ? [['Resolved · acknowledgement SMS sent', i.resolvedAt]] : []),
+  ];
+  const dr = document.getElementById('drawer');
+  dr.innerHTML = `
+    <div class="dr-h sev-${effSev(i)}"><div class="type-ic">${ic(ICON[i.type])}</div>
+      <div style="flex:1;min-width:0"><span class="tag sev">${SEV[effSev(i)].label}</span> ${i.escalated?`<span class="tag warn">Escalated</span>`:''}
+        <h3>#${i.id} · ${i.title}</h3><div class="sub">${i.place} · ${mins(i.at)}</div></div>
+      <button class="icon-btn" id="drClose" aria-label="Close">${ic('i-close')}</button></div>
+    <div class="dr-b">
+      ${i.dupOf ? `<div class="banner">${ic('i-merge')}<div><b>Possible duplicate of #${i.dupOf}</b><br>Same cause, 180 m away, 4 min apart. Confirm before merging.
+        <div class="acts"><button class="btn primary" data-act="merge">Merge into #${i.dupOf}</button><button class="btn text" data-act="separate">Keep separate</button></div></div></div>` : ''}
+      <div class="photo"><div>${ic('i-photo')}Photo from reporter<br><small>(sample prototype — real photo shown here)</small></div></div>
+      <div class="sec"><h4>${ic('i-ai','ic sm')}AI analysis</h4>
+        ${i.ai.status==='done' ? `<dl class="kv"><dt>Detected</dt><dd>${i.ai.label}</dd><dt>Cause</dt><dd>${i.cause || i.ai.reason}${i.ai.filled?' <span class="tag ai">AI filled</span>':''}</dd>
+          <dt>Why</dt><dd style="font-weight:400">${i.ai.reason}</dd><dt>Confidence</dt><dd>${i.ai.conf}%<div class="conf"><i style="width:${i.ai.conf}%"></i></div></dd></dl>`
+        : i.ai.status==='analyzing' ? `<div class="analyzing" style="height:60px;border-radius:8px"></div>`
+        : `<div style="color:var(--ink-3);font-size:13px">No photo sent. Using the reporter's cause: “${i.cause}”.</div>`}
+      </div>
+      <div class="sec"><h4>${ic('i-chart','ic sm')}Why score ${total}</h4><div class="brk">
+        ${Object.entries(p).map(([k,v])=>`<div class="brk-row"><span>${names[k]}</span><div class="bar"><i style="width:${v/max[k]*100}%"></i></div><b>+${v}</b></div>`).join('')}
+      </div></div>
+      <div class="sec"><h4>${ic('i-clock','ic sm')}Deadline</h4><div class="dl ${d.cls}"><div class="dl-top"><span>${d.label} by</span><span class="dl-time">${d.label==='Done'?'—':fmt(d.rem)}</span></div><div class="bar"><i style="width:${d.frac*100}%"></i></div></div></div>
+      <div class="sec"><h4>${ic('i-phone','ic sm')}Reporter</h4><dl class="kv"><dt>Name</dt><dd>${i.reporter.name}</dd><dt>Phone</dt><dd>+91 ${mask(i.reporter.phone)}</dd>
+        <dt>Status</dt><dd>${i.reporter.verified?`<span class="tag" style="background:var(--low-bg);color:var(--low)">${ic('i-shield')}OTP verified</span>`:`<span class="tag warn">Unverified (SOS)</span>`}</dd></dl></div>
+      <div class="sec"><h4>Timeline</h4><ul class="tl">${timeline.map(([txt,at])=>`<li>${txt}<small>${new Date(at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</small></li>`).join('')}</ul></div>
+    </div>
+    <div class="dr-f">
+      ${i.status==='reported' ? `<button class="btn tonal" data-act="verify">${ic('i-check','ic sm')}Verify</button>` : ''}
+      ${unassigned(i) ? `<select id="teamSel">${free.map((x,k)=>`<option value="${x.id}">${x.name} · ${x.km.toFixed(1)} km${k===0?' (nearest)':''}</option>`).join('') || '<option disabled>No team free</option>'}</select>
+        <button class="btn primary" data-act="assign" ${free.length?'':'disabled'}>${ic('i-arrow','ic sm')}Assign</button>` : ''}
+      ${i.status==='assigned' ? `<button class="btn tonal" data-act="progress">Mark in progress</button>` : ''}
+      ${(i.status==='assigned'||i.status==='progress') ? `<button class="btn primary" data-act="resolve">${ic('i-check','ic sm')}Mark resolved</button>` : ''}
+    </div>`;
+  dr.classList.add('on'); document.getElementById('scrim').classList.add('on');
+  document.getElementById('drClose').onclick = closeDrawer;
+}
+function closeDrawer(){ openId=null; document.getElementById('drawer').classList.remove('on'); document.getElementById('scrim').classList.remove('on'); }
+document.getElementById('scrim').onclick = closeDrawer;
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeAlert(); } });
+
+document.getElementById('drawer').addEventListener('click', e=>{
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const i = incidents.find(x=>x.id===openId); if(!i) return;
+  const act = b.dataset.act;
+  if(act==='verify'){ i.status='verified'; toast(ic('i-check')+`#${i.id} verified`); }
+  if(act==='assign'){ const tid = document.getElementById('teamSel').value, tm = teams.find(x=>x.id===tid);
+    i.status='assigned'; i.team=tid; i.assignedAt=Date.now(); tm.busy=true; toast(ic('i-arrow')+`#${i.id} assigned to ${tm.name} · task link sent`); }
+  if(act==='progress'){ i.status='progress'; }
+  if(act==='resolve'){ i.status='resolved'; i.resolvedAt=Date.now(); const tm = teams.find(x=>x.id===i.team); if(tm) tm.busy=false;
+    toast(ic('i-phone')+`#${i.id} resolved · SMS sent to +91 ${mask(i.reporter.phone)}`); }
+  if(act==='merge'){ const parent = incidents.find(x=>x.id===i.dupOf); parent.reports += i.reports;
+    incidents = incidents.filter(x=>x.id!==i.id); markerFor({...i,status:'resolved'}); toast(ic('i-merge')+`#${i.id} merged into #${parent.id} (${parent.reports} reports)`);
+    closeDrawer(); refresh(); flash(parent.id); return; }
+  if(act==='separate'){ delete i.dupOf; toast(`#${i.id} kept as a separate incident`); }
+  markerFor(i); refresh(); flash(i.id);
+  if(i.status==='resolved') closeDrawer(); else openDrawer(i.id);
+});
+function flash(id){ const el = rows.get(id); if(el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
+
+/* ===== Area alert dialog ===== */
+const dlg = document.getElementById('alertDlg');
+document.querySelectorAll('[data-open-alert]').forEach(b=>b.onclick=()=>{ dlg.classList.add('on'); document.getElementById('scrim').classList.add('on'); });
+function closeAlert(){ dlg.classList.remove('on'); if(openId==null) document.getElementById('scrim').classList.remove('on'); }
+document.getElementById('alertCancel').onclick = closeAlert;
+document.getElementById('alertSend').onclick = ()=>{ closeAlert(); toast(ic('i-alert')+`Area alert sent: ${document.getElementById('alertArea').value}`); };
+
+/* ===== Toasts ===== */
+function toast(html){
+  const box = document.getElementById('toasts'), el = document.createElement('div');
+  el.className='toast'; el.innerHTML = html; box.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),300); }, 3800);
+}
+
+/* ===== Simulated live arrival (shows AI analyzing -> labelled) ===== */
+setTimeout(()=>{
+  const i = {id:110, type:'car', title:'Bus and car collision', cause:'', place:'Arcot Road, Vadapalani', lat:13.050, lng:80.212, sev:'high', reports:1, injury:true,
+    at:Date.now(), status:'reported', isNew:true, reporter:{name:'Farhan A', phone:'98765 10293', verified:true}, ai:{status:'analyzing'}};
+  incidents.push(i); markerFor(i); refresh(); toast(ic('i-warn')+'New report #110 · Arcot Road, Vadapalani');
+  setTimeout(()=>{ Object.assign(i,{sev:'critical', title:'Bus–car collision, people trapped', ai:{status:'done', label:'Road accident (major)', conf:89,
+    reason:'Car crushed against a bus; door jammed, a person visible inside.', filled:true}});
+    markerFor(i); refresh(); flash(i.id); if(openId===i.id) openDrawer(i.id); }, 4500);
+}, 9000);
+
+/* ===== Loop ===== */
+function refresh(){ checkEscalations(); renderChips(); renderQueue(); renderKpis(); renderTeams(); renderMapCount(); }
+function clock(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+incidents.forEach(markerFor);
+refresh(); clock();
+setInterval(()=>{ clock(); tickDeadlines(); }, 1000);
+setInterval(()=>{ refresh(); if(openId!=null && !document.querySelector('#drawer select:focus')) {/* keep drawer stable */} }, 5000);
+</script>
+</body>
+</html>

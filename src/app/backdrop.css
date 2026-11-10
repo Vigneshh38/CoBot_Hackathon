@@ -1,0 +1,90 @@
+/* Page backdrops (src/components/Backdrop.tsx). Kept out of globals.css on purpose. */
+.bd { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--bg); }
+.on-bd { position: relative; z-index: 1; }
+.bd-photo { position: absolute; inset: -4%; transform-origin: 62% 40%; animation: bdDrift 70s ease-in-out infinite alternate; will-change: transform; }
+.bd-photo img { object-fit: cover; object-position: 58% 62%; filter: sepia(.3) saturate(1.05) hue-rotate(-4deg) contrast(1.02) brightness(1.04); }
+@keyframes bdDrift { from { transform: scale(1.04) translate3d(0, 0, 0); } to { transform: scale(1.14) translate3d(-2.5%, -1.5%, 0); } }
+.bd-glow { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .55; will-change: transform; }
+.bd-glow.g1 { width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax; background: radial-gradient(circle, #f6e3c4 0%, rgba(246,227,196,0) 70%); animation: bdFloat1 32s ease-in-out infinite alternate; }
+.bd-glow.g2 { width: 38vmax; height: 38vmax; right: -10vmax; top: 6vh; background: radial-gradient(circle, #f2c9a0 0%, rgba(242,201,160,0) 70%); opacity: .4; animation: bdFloat2 38s ease-in-out infinite alternate; }
+.bd-glow.g3 { width: 50vmax; height: 30vmax; left: 20vw; top: 34vh; background: radial-gradient(ellipse, #fffaf2 0%, rgba(255,250,242,0) 70%); opacity: .7; animation: bdFloat1 44s ease-in-out infinite alternate-reverse; }
+@keyframes bdFloat1 { to { transform: translate3d(8vw, 6vh, 0) scale(1.12); } }
+@keyframes bdFloat2 { to { transform: translate3d(-10vw, 10vh, 0) scale(.9); } }
+.bd-tint { position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgba(255,236,206,.30) 0%, rgba(255,236,206,0) 45%),
+  radial-gradient(90% 60% at 50% 20%, rgba(250,246,240,.55) 0%, rgba(250,246,240,0) 70%),
+  linear-gradient(180deg, rgba(250,246,240,.20) 0%, rgba(250,246,240,.22) 40%, rgba(250,246,240,.45) 62%, rgba(250,246,240,.86) 82%, rgba(250,246,240,.96) 100%); }
+.bd-tint::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #e9c79a 0%, #f4dcb8 55%, #faf6f0 100%); mix-blend-mode: soft-light; opacity: .7; }
+.bd-topo { position: absolute; inset: -480px 0 0 -480px; background: url(/bg/topo.svg) 0 0 / 480px 480px repeat; opacity: .9; animation: bdTopo 140s linear infinite;
+  -webkit-mask-image: linear-gradient(180deg, transparent 55%, #000 90%); mask-image: linear-gradient(180deg, transparent 55%, #000 90%); }
+@keyframes bdTopo { to { transform: translate3d(480px, 480px, 0); } }
+.bd-ping { position: absolute; left: 74%; top: 34%; width: 0; height: 0; }
+.bd-ping::after { content: ""; position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: var(--sand-600); box-shadow: 0 0 0 4px rgba(255,255,255,.75), 0 4px 14px rgba(122,90,56,.35); }
+.bd-ping i { position: absolute; width: 220px; height: 220px; margin: -110px; border-radius: 50%; border: 1.5px solid rgba(154,118,80,.55); opacity: 0; transform: scale(.05); animation: bdPing 6s cubic-bezier(.2,0,0,1) infinite; }
+.bd-ping i:nth-child(2) { animation-delay: 2s; }
+.bd-ping i:nth-child(3) { animation-delay: 4s; }
+@keyframes bdPing { 0% { opacity: .9; transform: scale(.05); } 100% { opacity: 0; transform: scale(1); } }
+.bd-grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .15 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.bd-credit { margin: 4px 0 8px; text-align: center; font-size: 11.5px; color: var(--ink-3); }
+.bd-credit a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* surfaces over the backdrop: frosted glass, warm hairline, deeper shadow */
+.on-bd .card { background: rgba(255,255,255,.80); border-color: rgba(255,255,255,.75);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 2px 6px rgba(70,45,20,.06), 0 18px 48px -12px rgba(70,45,20,.22); }
+.on-bd.page.narrow { padding-top: 40px; gap: 24px; }
+.on-bd .hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.on-bd .hero h1 { font-size: clamp(28px, 5vw, 40px); letter-spacing: -.03em; line-height: 1.1; text-shadow: 0 1px 24px rgba(255,250,242,.9); }
+.on-bd .hero .lead { font-size: 15.5px; max-width: 460px; color: var(--ink-2); text-shadow: 0 1px 16px rgba(255,250,242,.95); }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 15px; font-size: 12.5px; font-weight: 500; color: var(--sand-700);
+  background: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.8); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--shadow-1); }
+.eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: var(--low); animation: pulse 2s infinite; }
+.on-bd .brand-row .logo { padding: 10px 18px; border-radius: 20px; background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.8);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 28px -10px rgba(70,45,20,.25); }
+.on-bd .call { background: rgba(251,234,232,.86); border: 1px solid rgba(179,38,30,.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: 0 6px 20px -10px rgba(179,38,30,.35); transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease); }
+.on-bd .call:hover { transform: translateY(-2px); background: rgba(251,234,232,.96); box-shadow: 0 12px 28px -12px rgba(179,38,30,.45); }
+.on-bd .call .ic { width: 34px; height: 34px; padding: 7px; border-radius: 10px; background: rgba(255,255,255,.75); }
+.on-bd > section.card { animation: fadeUp .5s .08s var(--ease) both; }
+.login.on-bd .card { background: rgba(255,255,255,.86); }
+
+/* ---------- admin background: aerial Chennai photo (Backdrop variant="admin") ---------- */
+.bd-admin .bd-photo { animation-duration: 90s; transform-origin: 38% 30%; }
+.bd-admin .bd-photo img { object-position: 50% 30%; filter: sepia(.18) saturate(1.05) contrast(1.02) brightness(1.03); }
+.bd-admin .bd-tint { background:
+  linear-gradient(90deg, rgba(250,246,240,.30) 0%, rgba(250,246,240,.04) 35%, rgba(250,246,240,0) 100%),
+  linear-gradient(180deg, rgba(250,246,240,0) 0%, rgba(250,246,240,.10) 45%, rgba(250,246,240,.38) 100%); }
+.bd-admin .bd-tint::after { opacity: .35; }
+.bd-admin .bd-glow.g1 { opacity: .3; }
+.bd-admin .bd-topo, .bd-admin .bd-glow { display: none; }
+/* Fallback: the photo is also the layer's own background, so no part of the screen can show blank
+   if the browser skips painting the animated layer (seen as a white band at the bottom). */
+.bd-admin { background: var(--bg) url(/bg/chennai-aerial.jpg) 50% 30% / cover no-repeat; }
+.bd-admin .bd-photo { will-change: auto; }
+.bd-admin .bd-ping { left: 36%; top: 19%; }
+.shell-main { position: relative; }
+.on-bd .rail { background: rgba(255,255,255,.72); border-right-color: rgba(255,255,255,.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); box-shadow: 1px 0 24px -8px rgba(70,45,20,.25); }
+.on-bd .rail-count { border-color: #fff; }
+.on-bd.shell .card, .on-bd .duty-stat { background: rgba(255,255,255,.84); }
+.on-bd .duty-stat { border-color: rgba(255,255,255,.75); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 10px 30px -14px rgba(70,45,20,.3); }
+.on-bd .signout .btn { background: rgba(255,255,255,.78); border-color: rgba(255,255,255,.8); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.on-bd .signout .btn:hover { background: #fff; }
+.on-bd .kpi:hover { transform: translateY(-2px); }
+.shell-main .page-head h1, .shell-main .page > div:first-child h1 { text-shadow: 0 1px 18px rgba(255,250,242,.95); }
+.shell-main .page .lead { text-shadow: 0 1px 14px rgba(255,250,242,.95); }
+.bd-credit-admin { position: relative; width: fit-content; margin: 8px auto 20px; padding: 4px 12px; border-radius: 12px; color: var(--ink-2); background: rgba(255,255,255,.72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.shell-main:has(.mc) .bd-credit-admin { display: none; }
+
+@media (max-width: 640px) {
+  .on-bd.page.narrow { padding-top: 24px; }
+  .bd-citizen .bd-ping { left: 82%; top: 58%; }
+  .bd-citizen .bd-photo img { object-position: 66% 60%; }
+  .bd-admin .bd-photo img { object-position: 40% 30%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bd-photo, .bd-glow, .bd-topo, .bd-ping i, .eyebrow i { animation: none !important; }
+  .bd-ping i:first-child { opacity: .35; transform: scale(.5); }
+}

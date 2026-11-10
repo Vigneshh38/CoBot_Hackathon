@@ -1,0 +1,36 @@
+{
+  "name": "resqure-emergency",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "node --test src/lib/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "check:round2": "node --import ./scripts/stub-server-only.mjs scripts/check-round2.ts",
+    "replay-gps": "node --import ./scripts/stub-server-only.mjs scripts/replay-gps.ts",
+    "check:sos": "node --import ./scripts/stub-server-only.mjs scripts/check-sos.ts",
+    "push:test": "node --import ./scripts/stub-server-only.mjs scripts/test-push.ts"
+  },
+  "dependencies": {
+    "maplibre-gl": "^4.7.1",
+    "next": "16.4.6",
+    "nodemailer": "^10.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "web-push": "^3.6.7",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "typescript": "^5"
+  }
+}

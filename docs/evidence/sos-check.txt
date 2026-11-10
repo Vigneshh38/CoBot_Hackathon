@@ -1,0 +1,15 @@
+PASS  SOS is saved as Critical, no AI job
+PASS  title "SOS at Guindy" + GPS accuracy in description
+PASS  SOS is at the top of the priority queue
+PASS  repeat SOS finds the open SOS by device and by phone
+PASS  different device + phone starts a new SOS
+PASS  repeat press updates position + re-alert time, no duplicate incident
+PASS  alerted count keeps the highest across re-alerts
+PASS  SOS without GPS still saves
+PASS  admin sees 2 unseen SOS
+PASS  opening an SOS removes it from the alarm list
+PASS  two nearby people marked 'I'm going'
+PASS  re-subscribing the same browser updates its row (no duplicate)
+PASS  refresh without location keeps the last known location
+PASS  only the person ~470 m away is picked (not far, not the sender, not admin)
+PASS  VAPID keys generated once into data/vapid.json
